@@ -1,0 +1,80 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en_GB\n"
+
+msgctxt "#30000"
+msgid "Channels"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Tools"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Country code"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Two-letter code such as in, us, uk. Use 'all' for every country."
+msgstr ""
+
+msgctxt "#30012"
+msgid "Pick country from list..."
+msgstr ""
+
+msgctxt "#30013"
+msgid "Remove duplicate streams"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Drop repeated stream URLs and sort channels by name."
+msgstr ""
+
+msgctxt "#30015"
+msgid "Refresh playlist every (hours)"
+msgstr ""
+
+msgctxt "#30016"
+msgid "How often the channel list is re-downloaded."
+msgstr ""
+
+msgctxt "#30020"
+msgid "Set up / repair Live TV now"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Installs PVR IPTV Simple Client if needed and points it at our playlist."
+msgstr ""
+
+msgctxt "#30022"
+msgid "Refresh playlist now"
+msgstr ""
+
+msgctxt "#30100"
+msgid "Set up Free Live TV now? This installs and configures PVR IPTV Simple Client."
+msgstr ""
+
+msgctxt "#30101"
+msgid "Playlist updated: {0} channels"
+msgstr ""
+
+msgctxt "#30102"
+msgid "Could not download playlist. Check your connection."
+msgstr ""
+
+msgctxt "#30103"
+msgid "Live TV is ready. Open TV from the Kodi home screen."
+msgstr ""
+
+msgctxt "#30104"
+msgid "PVR IPTV Simple Client could not be installed."
+msgstr ""
+
+msgctxt "#30105"
+msgid "Pick a country"
+msgstr ""
+
+msgctxt "#30106"
+msgid "All countries"
+msgstr ""

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.freelivetv" name="Free Live TV Repository" version="1.0.0" provider-name="Free Live TV">
+    <extension point="xbmc.addon.repository" name="Free Live TV Repository">
+        <dir>
+            <info compressed="false">__BASE_URL__addons.xml</info>
+            <checksum>__BASE_URL__addons.xml.md5</checksum>
+            <datadir zip="true">__BASE_URL__</datadir>
+        </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Updates for Free Live TV</summary>
+        <description lang="en_GB">Install this once and Kodi will keep Free Live TV up to date automatically.</description>
+        <platform>all</platform>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.png</fanart>
+        </assets>
+    </extension>
+</addon>

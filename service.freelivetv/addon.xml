@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="service.freelivetv" name="Free Live TV" version="0.1.0" provider-name="Free Live TV">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.service" library="service.py"/>
+    <extension point="xbmc.python.script" library="script.py"/>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Free live TV from around the world</summary>
+        <description lang="en_GB">Fetches free public live TV playlists from the iptv-org project, cleans them up and configures PVR IPTV Simple Client automatically. Pick any country in the settings. Not affiliated with iptv-org.</description>
+        <disclaimer lang="en_GB">This add-on only links to publicly available streams and hosts no content.</disclaimer>
+        <language>en</language>
+        <platform>all</platform>
+        <license>MIT</license>
+        <source>https://github.com</source>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.png</fanart>
+        </assets>
+        <news>v0.1.0 - First release: country picker, auto playlist refresh, auto IPTV Simple setup.</news>
+    </extension>
+</addon>

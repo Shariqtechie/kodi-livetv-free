@@ -1,0 +1,42 @@
+name: Publish Kodi repository
+
+on:
+  push:
+    tags: ["v*"]      # git tag v0.1.1 && git push --tags
+  workflow_dispatch:   # manual re-publish button
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Build repo site
+        run: |
+          VERSION=""
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then VERSION="${GITHUB_REF_NAME#v}"; fi
+          python3 scripts/build_repo.py --out site \
+            --base-url "${{ steps.pages.outputs.base_url }}/" --version "$VERSION"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
