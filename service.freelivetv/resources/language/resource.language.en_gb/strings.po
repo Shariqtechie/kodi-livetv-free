@@ -178,3 +178,19 @@ msgstr ""
 msgctxt "#30120"
 msgid "Free Live TV log"
 msgstr ""
+
+msgctxt "#30050"
+msgid "Merge duplicate channels"
+msgstr ""
+
+msgctxt "#30051"
+msgid "If a channel is listed several times, keep only the best working stream (known alive first, then highest resolution)."
+msgstr ""
+
+msgctxt "#30121"
+msgid "Test channels now? This takes about a minute and hides streams that don't work."
+msgstr ""
+
+msgctxt "#30122"
+msgid "Welcome! Pick your country (India is selected - just press OK)"
+msgstr ""

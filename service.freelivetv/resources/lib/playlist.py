@@ -1,6 +1,7 @@
 """Download, clean and write the M3U playlist. No Kodi imports."""
 import json
 import os
+import re
 import time
 import urllib.request
 
@@ -68,24 +69,60 @@ def load_entries(code, dedupe=True):
     return clean(parse(_get(source_url(code))), dedupe)
 
 
-def generate(code, out_path, dedupe=True, dead=None):
-    """Write the playlist atomically. Returns (kept, hidden).
+_TVG_ID = re.compile(r'tvg-id="([^"]*)"')
+_RES = re.compile(r"\((\d{3,4})p\)")
+
+
+def _quality(entry):
+    m = _RES.search(entry["name"])
+    return int(m.group(1)) if m else 0
+
+
+def _tvg_id(entry):
+    m = _TVG_ID.search(entry["meta"][0])
+    return m.group(1).strip() if m else ""
+
+
+def merge_duplicates(entries, alive=None):
+    """Keep one stream per tvg-id: prefer a stream known to be alive, then the highest
+    resolution, then the first listed. Entries without a tvg-id are never merged
+    (we can't prove they're the same channel). Order is preserved."""
+    alive = alive or set()
+    best = {}
+    for e in entries:
+        key = _tvg_id(e)
+        if not key:
+            continue
+        score = (1 if e["url"] in alive else 0, _quality(e))
+        if key not in best or score > best[key][0]:
+            best[key] = (score, e)
+    return [e for e in entries if not _tvg_id(e) or best[_tvg_id(e)][1] is e]
+
+
+def generate(code, out_path, dedupe=True, dead=None, merge=False, alive=None):
+    """Write the playlist atomically. Returns (kept, hidden_as_dead, merged_duplicates).
     Raises on network error or empty playlist, leaving any old file untouched."""
     entries = load_entries(code, dedupe)
     if not entries:
         raise ValueError("playlist is empty")
     total = len(entries)
     if dead:
-        alive = [e for e in entries if e["url"] not in dead]
-        if alive:  # never end up with an empty list because of filtering
-            entries = alive
+        alive_entries = [e for e in entries if e["url"] not in dead]
+        if alive_entries:  # never end up with an empty list because of filtering
+            entries = alive_entries
         else:
             debuglog.warn("Every channel is marked dead - ignoring the dead-stream filter")
+    hidden = total - len(entries)
+    merged = 0
+    if merge:
+        before = len(entries)
+        entries = merge_duplicates(entries, alive)
+        merged = before - len(entries)
     tmp = out_path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(render(entries))
     os.replace(tmp, out_path)
-    return len(entries), total - len(entries)
+    return len(entries), hidden, merged
 
 
 def list_countries():

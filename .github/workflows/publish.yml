@@ -2,11 +2,11 @@ name: Publish Kodi repository
 
 on:
   push:
-    tags: ["v*"]      # git tag v0.1.1 && git push --tags
+    tags: ["v*"]      # git tag v0.3.1 && git push --tags  (or scripts/release.sh 0.3.1)
   workflow_dispatch:   # manual re-publish button
 
 permissions:
-  contents: read
+  contents: write      # create the GitHub Release
   pages: write
   id-token: write
 
@@ -27,6 +27,15 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then VERSION="${GITHUB_REF_NAME#v}"; fi
           python3 scripts/build_repo.py --out site \
             --base-url "${{ steps.pages.outputs.base_url }}/" --version "$VERSION"
+      - name: Publish GitHub Release with the zips attached
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FILES=$(ls site/repository.freelivetv-*.zip site/service.freelivetv/service.freelivetv-*.zip)
+          gh release create "$GITHUB_REF_NAME" $FILES \
+            --title "Free Live TV $GITHUB_REF_NAME" --generate-notes \
+            || gh release upload "$GITHUB_REF_NAME" $FILES --clobber
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

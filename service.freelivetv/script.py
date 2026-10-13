@@ -15,7 +15,7 @@ try:
     elif action == "refresh":
         core.refresh_playlist(show_notice=True)
     elif action == "choose_country":
-        core.choose_country()
+        core.choose_country(monitor)
     elif action == "check_streams":
         core.check_streams(monitor)
     elif action == "view_log":

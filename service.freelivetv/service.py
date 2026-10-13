@@ -3,10 +3,8 @@ import time
 import traceback
 
 import xbmc
-import xbmcgui
 
 from resources.lib import core, debuglog
-from resources.lib.constants import ADDON_NAME
 
 
 class SettingsMonitor(xbmc.Monitor):
@@ -24,26 +22,31 @@ def main():
     except Exception as e:
         debuglog.warn("Diagnostics failed: %s" % e)
 
-    # First run: wait for Kodi to settle, then offer one-click setup.
     if not os.path.exists(core.flag_path()):
+        # First run: let Kodi settle, then the welcome flow (country -> setup -> optional test).
         if monitor.waitForAbort(10):
             return
-        if xbmcgui.Dialog().yesno(ADDON_NAME, core.tr(30100)):
-            core.setup(monitor)
-        else:
-            debuglog.info("User declined first-run setup")
-            with open(core.flag_path(), "w") as f:
-                f.write("declined")  # don't nag; user can run it from settings
+        core.first_run(monitor)
+    elif not core.has_signature():
+        core.refresh_playlist()  # upgraded from an older version: apply new options once
 
+    ticks = 0
     while not monitor.abortRequested():
-        path = core.playlist_path()
-        max_age = core.addon().getSettingInt("refresh_hours") * 3600
-        stale = not os.path.exists(path) or time.time() - os.path.getmtime(path) > max_age
-        if monitor.changed or stale:
-            debuglog.debug("Refresh triggered (settings changed=%s, stale=%s)" % (monitor.changed, stale))
+        if monitor.changed:
             monitor.changed = False
-            core.refresh_playlist()
-        if monitor.waitForAbort(60):
+            # Only react to settings that change the playlist (country, dedupe, hide dead, merge).
+            if core.signature_changed():
+                debuglog.debug("Playlist-relevant setting changed")
+                if core.refresh_playlist(show_notice=True):
+                    core.offer_reload(monitor)
+        elif ticks % 12 == 0:  # about once a minute
+            path = core.playlist_path()
+            max_age = core.addon().getSettingInt("refresh_hours") * 3600
+            if not os.path.exists(path) or time.time() - os.path.getmtime(path) > max_age:
+                debuglog.debug("Playlist is stale, refreshing")
+                core.refresh_playlist()
+        ticks += 1
+        if monitor.waitForAbort(5):
             break
     debuglog.info("Service stopped")
 

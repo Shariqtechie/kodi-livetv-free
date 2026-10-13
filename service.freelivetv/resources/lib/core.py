@@ -33,15 +33,45 @@ flag_path = paths.flag_path
 
 # ---- playlist --------------------------------------------------------------------------
 
-def refresh_playlist(show_notice=False):
+def _signature(a, country=None):
+    """Settings that change what ends up in the playlist. Used to know when TV needs a reload."""
+    return "|".join([
+        (country if country is not None else a.getSetting("country")).strip().lower(),
+        str(a.getSettingBool("dedupe")),
+        str(a.getSettingBool("hide_dead")),
+        str(a.getSettingBool("merge_duplicates")),
+    ])
+
+
+def _sig_path():
+    return os.path.join(paths.profile_dir(), "playlist.sig")
+
+
+def has_signature():
+    return os.path.exists(_sig_path())
+
+
+def signature_changed():
+    """True if playlist-relevant settings differ from what the current playlist was built with."""
+    try:
+        with open(_sig_path(), encoding="utf-8") as f:
+            return f.read() != _signature(addon())
+    except OSError:
+        return False
+
+
+def refresh_playlist(show_notice=False, country=None):
     """Returns the number of channels written, or 0 on failure."""
     a = addon()
-    country = a.getSetting("country")
-    dead = streamcheck.dead_urls() if a.getSettingBool("hide_dead") else set()
+    country = a.getSetting("country") if country is None else country
+    items = streamcheck.load_cache()
+    dead = streamcheck.dead_urls(items) if a.getSettingBool("hide_dead") else set()
+    alive = {u for u, v in items.items() if v[0]}
     t0 = time.time()
     try:
-        kept, hidden = playlist.generate(
-            country, paths.playlist_path(), a.getSettingBool("dedupe"), dead
+        kept, hidden, merged = playlist.generate(
+            country, paths.playlist_path(), a.getSettingBool("dedupe"), dead,
+            a.getSettingBool("merge_duplicates"), alive
         )
     except Exception as e:  # network down, bad country code, empty list...
         debuglog.error("Playlist refresh failed (country=%r): %s: %s" % (country, type(e).__name__, e))
@@ -49,11 +79,19 @@ def refresh_playlist(show_notice=False):
         if show_notice:
             notify(tr(30102))
         return 0
-    debuglog.info("Playlist updated: country=%s, %d channels written, %d hidden as dead, %d ms" % (
-        country, kept, hidden, (time.time() - t0) * 1000))
+    with open(_sig_path(), "w", encoding="utf-8") as f:
+        f.write(_signature(a, country))
+    debuglog.info("Playlist updated: country=%s, %d channels written, %d hidden as dead, "
+                  "%d duplicates merged, %d ms" % (country, kept, hidden, merged, (time.time() - t0) * 1000))
     if show_notice:
         notify(tr(30101).format(kept))
     return kept
+
+
+def offer_reload(monitor):
+    """IPTV Simple only re-reads the playlist on reload, so offer one."""
+    if xbmcgui.Dialog().yesno(ADDON_NAME, tr(30116)):
+        pvr_setup.reload_client(monitor)
 
 
 def setup(monitor):
@@ -75,26 +113,62 @@ def setup(monitor):
     return True
 
 
-def choose_country():
+def _select_country(countries, preselect_code, heading):
+    """Show the country list with preselect_code highlighted. Returns a code, 'all', or None."""
+    labels = [tr(30106)] + ["%s (%s)" % (name, code) for code, name in countries]
+    pre = 0
+    for i, (code, _name) in enumerate(countries):
+        if code.lower() == (preselect_code or "").lower():
+            pre = i + 1
+    idx = xbmcgui.Dialog().select(heading, labels, preselect=pre)
+    if idx < 0:
+        return None
+    return "all" if idx == 0 else countries[idx - 1][0].lower()
+
+
+def choose_country(monitor):
+    a = addon()
     try:
         countries = playlist.list_countries()
     except Exception as e:
         debuglog.error("Country list failed: %s: %s" % (type(e).__name__, e))
         notify(tr(30102))
         return
-    labels = [tr(30106)] + ["%s (%s)" % (name, code) for code, name in countries]
-    idx = xbmcgui.Dialog().select(tr(30105), labels)
-    if idx < 0:
+    code = _select_country(countries, a.getSetting("country"), tr(30105))
+    if code is None:
         return
-    code = "all" if idx == 0 else countries[idx - 1][0].lower()
-    debuglog.info("Country changed to %s" % code)
+    debuglog.info("Country picked: %s" % code)
+    # Build the new playlist first; only switch the setting if that worked.
+    if refresh_playlist(show_notice=True, country=code):
+        a.setSetting("country", code)
+        offer_reload(monitor)
+
+
+def first_run(monitor):
+    """Welcome flow: pick country (India preselected) -> set up IPTV Simple -> offer stream test."""
+    debuglog.info("First run: asking for country")
+    try:
+        countries = playlist.list_countries()
+    except Exception as e:  # offline: fall back to India so setup can still try
+        debuglog.warn("Country list unavailable on first run (%s: %s), defaulting to India" % (
+            type(e).__name__, e))
+        countries = [("IN", "India")]
+    code = _select_country(countries, "in", tr(30122))
+    if code is None:
+        debuglog.info("User cancelled first-run setup")
+        with open(paths.flag_path(), "w") as f:
+            f.write("declined")  # don't nag; user can run it from settings
+        return
     addon().setSetting("country", code)
-    refresh_playlist(show_notice=True)
+    if not setup(monitor):
+        return
+    if xbmcgui.Dialog().yesno(ADDON_NAME, tr(30121)):
+        check_streams(monitor, reload="auto")
 
 
 # ---- stream tester ---------------------------------------------------------------------
 
-def check_streams(monitor):
+def check_streams(monitor, reload="ask"):
     a = addon()
     country = a.getSetting("country")
     try:
@@ -161,8 +235,10 @@ def check_streams(monitor):
         notify(tr(30115))
     else:
         notify(tr(30113).format(alive, dead, kept))
-    if kept and xbmcgui.Dialog().yesno(ADDON_NAME, tr(30116)):
+    if kept and reload == "auto":
         pvr_setup.reload_client(monitor)
+    elif kept and reload == "ask":
+        offer_reload(monitor)
 
 
 # ---- diagnostics / logs ----------------------------------------------------------------
@@ -203,8 +279,9 @@ def diagnostics():
         "Kodi: %s" % xbmc.getInfoLabel("System.BuildVersion"),
         "Python: %s" % platform.python_version(),
         "OS: %s" % os_info,
-        "Settings: country=%s dedupe=%s hide_dead=%s refresh_hours=%s check_days=%s debug=%s" % (
+        "Settings: country=%s dedupe=%s hide_dead=%s merge=%s refresh_hours=%s check_days=%s debug=%s" % (
             a.getSetting("country"), a.getSetting("dedupe"), a.getSetting("hide_dead"),
+            a.getSetting("merge_duplicates"),
             a.getSetting("refresh_hours"), a.getSetting("check_days"), a.getSetting("debug_enabled")),
     ]
     try:
