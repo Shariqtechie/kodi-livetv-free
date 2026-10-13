@@ -23,6 +23,23 @@
                     <default>true</default>
                     <control type="toggle"/>
                 </setting>
+                <setting id="hide_dead" type="boolean" label="30030" help="30031">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="check_days" type="integer" label="30032" help="30033">
+                    <level>0</level>
+                    <default>3</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <step>1</step>
+                        <maximum>30</maximum>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
                 <setting id="refresh_hours" type="integer" label="30015" help="30016">
                     <level>0</level>
                     <default>12</default>
@@ -39,6 +56,11 @@
         </category>
         <category id="tools" label="30001">
             <group id="1">
+                <setting id="check_streams" type="action" label="30034" help="30035">
+                    <level>0</level>
+                    <data>RunScript(service.freelivetv,check_streams)</data>
+                    <control type="button" format="action"/>
+                </setting>
                 <setting id="run_setup" type="action" label="30020" help="30021">
                     <level>0</level>
                     <data>RunScript(service.freelivetv,setup)</data>
@@ -47,6 +69,30 @@
                 <setting id="run_refresh" type="action" label="30022">
                     <level>0</level>
                     <data>RunScript(service.freelivetv,refresh)</data>
+                    <control type="button" format="action"/>
+                </setting>
+            </group>
+        </category>
+        <category id="troubleshooting" label="30002">
+            <group id="1">
+                <setting id="debug_enabled" type="boolean" label="30040" help="30041">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="view_log" type="action" label="30042">
+                    <level>0</level>
+                    <data>RunScript(service.freelivetv,view_log)</data>
+                    <control type="button" format="action"/>
+                </setting>
+                <setting id="export_log" type="action" label="30043" help="30044">
+                    <level>0</level>
+                    <data>RunScript(service.freelivetv,export_log)</data>
+                    <control type="button" format="action"/>
+                </setting>
+                <setting id="toggle_kodi_debug" type="action" label="30045" help="30046">
+                    <level>0</level>
+                    <data>RunScript(service.freelivetv,toggle_kodi_debug)</data>
                     <control type="button" format="action"/>
                 </setting>
             </group>

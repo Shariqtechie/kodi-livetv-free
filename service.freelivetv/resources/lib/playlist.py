@@ -1,8 +1,10 @@
-"""Download, clean and write the M3U playlist. Pure python, no Kodi imports."""
+"""Download, clean and write the M3U playlist. No Kodi imports."""
 import json
 import os
+import time
 import urllib.request
 
+from resources.lib import debuglog
 from resources.lib.constants import BASE_URL, COUNTRIES_API, USER_AGENT
 
 
@@ -14,9 +16,13 @@ def source_url(code):
 
 
 def _get(url, timeout=30):
+    t0 = time.time()
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read().decode("utf-8", errors="replace")
+        body = resp.read()
+        debuglog.debug("GET %s -> %s, %d bytes, %d ms" % (
+            url, getattr(resp, "status", "?"), len(body), (time.time() - t0) * 1000))
+        return body.decode("utf-8", errors="replace")
 
 
 def parse(text):
@@ -57,17 +63,29 @@ def render(entries):
     return "\n".join(out) + "\n"
 
 
-def generate(code, out_path, dedupe=True):
-    """Download + clean + atomically write. Returns channel count.
+def load_entries(code, dedupe=True):
+    """Download + parse + clean. Returns the FULL list (no dead-stream filtering)."""
+    return clean(parse(_get(source_url(code))), dedupe)
+
+
+def generate(code, out_path, dedupe=True, dead=None):
+    """Write the playlist atomically. Returns (kept, hidden).
     Raises on network error or empty playlist, leaving any old file untouched."""
-    entries = clean(parse(_get(source_url(code))), dedupe)
+    entries = load_entries(code, dedupe)
     if not entries:
         raise ValueError("playlist is empty")
+    total = len(entries)
+    if dead:
+        alive = [e for e in entries if e["url"] not in dead]
+        if alive:  # never end up with an empty list because of filtering
+            entries = alive
+        else:
+            debuglog.warn("Every channel is marked dead - ignoring the dead-stream filter")
     tmp = out_path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(render(entries))
     os.replace(tmp, out_path)
-    return len(entries)
+    return len(entries), total - len(entries)
 
 
 def list_countries():

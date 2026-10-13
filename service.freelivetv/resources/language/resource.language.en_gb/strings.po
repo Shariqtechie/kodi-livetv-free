@@ -11,6 +11,10 @@ msgctxt "#30001"
 msgid "Tools"
 msgstr ""
 
+msgctxt "#30002"
+msgid "Troubleshooting"
+msgstr ""
+
 msgctxt "#30010"
 msgid "Country code"
 msgstr ""
@@ -51,6 +55,58 @@ msgctxt "#30022"
 msgid "Refresh playlist now"
 msgstr ""
 
+msgctxt "#30030"
+msgid "Hide dead channels"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Leave out channels that failed the last stream test. Channels never tested are kept."
+msgstr ""
+
+msgctxt "#30032"
+msgid "Re-test channels after (days)"
+msgstr ""
+
+msgctxt "#30033"
+msgid "A channel tested more recently than this is skipped by the next test."
+msgstr ""
+
+msgctxt "#30034"
+msgid "Test channels now"
+msgstr ""
+
+msgctxt "#30035"
+msgid "Checks every stream and hides the ones that don't answer. Can take a few minutes."
+msgstr ""
+
+msgctxt "#30040"
+msgid "Debug logging"
+msgstr ""
+
+msgctxt "#30041"
+msgid "Write detailed steps to the Free Live TV log. Errors are always logged."
+msgstr ""
+
+msgctxt "#30042"
+msgid "View log"
+msgstr ""
+
+msgctxt "#30043"
+msgid "Export log to folder..."
+msgstr ""
+
+msgctxt "#30044"
+msgid "Saves diagnostics, our log and the relevant kodi.log lines into one text file to share."
+msgstr ""
+
+msgctxt "#30045"
+msgid "Toggle Kodi debug logging"
+msgstr ""
+
+msgctxt "#30046"
+msgid "Turns Kodi's own debug logging on or off. Needed to see HTTP errors from IPTV Simple."
+msgstr ""
+
 msgctxt "#30100"
 msgid "Set up Free Live TV now? This installs and configures PVR IPTV Simple Client."
 msgstr ""
@@ -77,4 +133,48 @@ msgstr ""
 
 msgctxt "#30106"
 msgid "All countries"
+msgstr ""
+
+msgctxt "#30110"
+msgid "Testing channels..."
+msgstr ""
+
+msgctxt "#30111"
+msgid "Checked {0} of {1}   |   Alive: {2}   Dead: {3}"
+msgstr ""
+
+msgctxt "#30112"
+msgid "All {0} channels were tested recently. Nothing to do."
+msgstr ""
+
+msgctxt "#30113"
+msgid "Test done: {0} alive, {1} dead. Playlist has {2} channels."
+msgstr ""
+
+msgctxt "#30114"
+msgid "Almost nothing answered. Are you offline? Results were not saved."
+msgstr ""
+
+msgctxt "#30115"
+msgid "Test cancelled. Partial results were saved."
+msgstr ""
+
+msgctxt "#30116"
+msgid "Reload TV channels now so the new list shows up? (stops playback)"
+msgstr ""
+
+msgctxt "#30117"
+msgid "Log saved: {0}"
+msgstr ""
+
+msgctxt "#30118"
+msgid "Pick a folder to save the log"
+msgstr ""
+
+msgctxt "#30119"
+msgid "Kodi debug logging: {0}"
+msgstr ""
+
+msgctxt "#30120"
+msgid "Free Live TV log"
 msgstr ""
