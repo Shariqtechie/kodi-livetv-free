@@ -83,7 +83,11 @@ def main():
 code{{background:#eee;padding:2px 6px;border-radius:4px}}</style></head><body>
 <h1>Free Live TV for Kodi</h1>
 <p>Latest: <b>v{versions[MAIN_ADDON]}</b></p>
-<p><a href="{repo_zip}">Download {repo_zip}</a></p>
+<ul>
+<li><a href="{repo_zip}">{repo_zip}</a></li>
+<li><a href="addons.xml">addons.xml</a></li>
+<li><a href="addons.xml.md5">addons.xml.md5</a></li>
+</ul>
 <h2>Install</h2><ol>
 <li>Kodi: Settings &rarr; File manager &rarr; Add source &rarr; <code>{base_url}</code> (name it <code>freelivetv</code>)</li>
 <li>Settings &rarr; Add-ons &rarr; Install from zip file &rarr; freelivetv &rarr; <code>{repo_zip}</code></li>
