@@ -1,5 +1,6 @@
 import os
 import time
+import traceback
 
 import xbmc
 import xbmcgui
@@ -47,4 +48,8 @@ def main():
     debuglog.info("Service stopped")
 
 
-main()
+try:
+    main()
+except Exception as e:
+    debuglog.error("Service crashed: %s: %s" % (type(e).__name__, e))
+    debuglog.error(traceback.format_exc())

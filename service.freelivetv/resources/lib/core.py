@@ -1,4 +1,6 @@
 import os
+import platform
+import re
 import time
 import traceback
 from collections import Counter
@@ -119,8 +121,15 @@ def check_streams(monitor):
         return dlg.iscanceled() or monitor.abortRequested()
 
     t0 = time.time()
-    results, cancelled = streamcheck.run(todo, progress)
-    dlg.close()
+    results, cancelled = {}, False
+    try:
+        _, cancelled = streamcheck.run(todo, progress, results)
+    except Exception as e:
+        debuglog.error("Stream test crashed after %d results: %s: %s" % (len(results), type(e).__name__, e))
+        debuglog.error(traceback.format_exc())
+        cancelled = True
+    finally:
+        dlg.close()
 
     checked = len(results)
     alive = sum(1 for r in results.values() if r[0])
@@ -158,8 +167,12 @@ def check_streams(monitor):
 
 # ---- diagnostics / logs ----------------------------------------------------------------
 
+_TS = re.compile(r"^\d{4}-\d{2}-\d{2} ")
+
+
 def _kodi_log_excerpt(max_lines=300):
-    """Lines from kodi.log that mention us or IPTV Simple (stream errors, demuxer failures...)."""
+    """Lines from kodi.log about us, IPTV Simple, playback failures and Python errors,
+    including the un-timestamped continuation lines of tracebacks."""
     try:
         path = xbmcvfs.translatePath("special://logpath/kodi.log")
         with open(path, "rb") as f:
@@ -167,19 +180,29 @@ def _kodi_log_excerpt(max_lines=300):
             size = f.tell()
             f.seek(max(0, size - 3 * 1024 * 1024))
             text = f.read().decode("utf-8", errors="replace")
-        keys = ("freelivetv", "pvr.iptvsimple", "CVideoPlayer::OpenDemuxStream", "Playback failed")
-        lines = [l for l in text.splitlines() if any(k in l for k in keys)]
-        return "\n".join(lines[-max_lines:]) or "(no matching lines)"
+        keys = ("freelivetv", "pvr.iptvsimple", "CVideoPlayer::OpenDemuxStream", "Playback failed",
+                "PythonToCppException", "Python callback/script", "Traceback")
+        out, keep = [], False
+        for line in text.splitlines():
+            if _TS.match(line):
+                keep = any(k in line for k in keys)
+            if keep:  # a matching line, or a continuation (traceback) line right after one
+                out.append(line)
+        return "\n".join(out[-max_lines:]) or "(no matching lines)"
     except Exception as e:
         return "(could not read kodi.log: %s)" % e
 
 
 def diagnostics():
     a = addon()
+    os_info = xbmc.getInfoLabel("System.OSVersionInfo")
+    if not os_info or os_info == "Busy":  # label isn't ready right after Kodi starts
+        os_info = platform.platform()
     lines = [
         "Free Live TV %s" % a.getAddonInfo("version"),
         "Kodi: %s" % xbmc.getInfoLabel("System.BuildVersion"),
-        "OS: %s" % xbmc.getInfoLabel("System.OSVersionInfo"),
+        "Python: %s" % platform.python_version(),
+        "OS: %s" % os_info,
         "Settings: country=%s dedupe=%s hide_dead=%s refresh_hours=%s check_days=%s debug=%s" % (
             a.getSetting("country"), a.getSetting("dedupe"), a.getSetting("hide_dead"),
             a.getSetting("refresh_hours"), a.getSetting("check_days"), a.getSetting("debug_enabled")),

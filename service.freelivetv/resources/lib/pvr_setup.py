@@ -69,6 +69,11 @@ def _set_value(xml, key, value):
     return xml.replace("</settings>", "    %s\n</settings>" % new)
 
 
+def _remove_value(xml, key):
+    pattern = re.compile(r'[ \t]*<setting id="%s"[^>]*?(?:/>|>.*?</setting>)\n?' % re.escape(key), re.S)
+    return pattern.sub("", xml)
+
+
 def configure(m3u_path, refresh_minutes, monitor):
     """Create or update OUR IPTV Simple instance. Other instances are never touched."""
     values = {
@@ -77,7 +82,6 @@ def configure(m3u_path, refresh_minutes, monitor):
         "m3uPathType": "0",
         "m3uPath": m3u_path,
         "m3uRefreshMode": "1",
-        "m3uRefreshIntervalMins": refresh_minutes,
         "epgPathType": "1",
         "epgUrl": "",
     }
@@ -100,6 +104,8 @@ def configure(m3u_path, refresh_minutes, monitor):
             xml = fh.read()
         for k, v in values.items():
             xml = _set_value(xml, k, v)
+        # v0.2.0 wrote a value IPTV Simple rejects ("failed to load value 720") - remove it
+        xml = _remove_value(xml, "m3uRefreshIntervalMins")
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(xml)
         debuglog.info("PVR: updated our instance file %s" % ours)

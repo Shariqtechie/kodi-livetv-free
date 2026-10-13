@@ -105,10 +105,13 @@ def check_entry(entry, timeout=CHECK_TIMEOUT):
     return True, "ok", ms()
 
 
-def run(entries, progress_cb, workers=CHECK_WORKERS, timeout=CHECK_TIMEOUT):
+def run(entries, progress_cb, results=None, workers=CHECK_WORKERS, timeout=CHECK_TIMEOUT):
     """Check entries in parallel. progress_cb(done, total, alive, dead) -> True to cancel.
-    Returns ({url: (ok, reason, ms)}, cancelled)."""
-    results, done, alive, dead = {}, 0, 0, 0
+    Fills `results` ({url: (ok, reason, ms)}) as it goes, so the caller keeps partial
+    results even if something raises. Returns (results, cancelled).
+    Python 3.8 compatible: Kodi on Windows bundles 3.8 (no Executor.shutdown(cancel_futures))."""
+    results = {} if results is None else results
+    done = alive = dead = 0
     total = len(entries)
     ex = ThreadPoolExecutor(max_workers=workers)
     futures = {ex.submit(check_entry, e, timeout): e for e in entries}
@@ -125,5 +128,7 @@ def run(entries, progress_cb, workers=CHECK_WORKERS, timeout=CHECK_TIMEOUT):
                 cancelled = True
                 break
     finally:
-        ex.shutdown(wait=False, cancel_futures=True)
+        for fut in futures:
+            fut.cancel()  # drop anything still queued
+        ex.shutdown(wait=False)
     return results, cancelled
